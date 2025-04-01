@@ -1,0 +1,6 @@
+﻿  MyForm.cpp
+C:\Users\Глеб\source\repos\FileSharing\ReceiverPage.h(383,32): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+  (compiling source file 'MyForm.cpp')
+  
+  MyForm.obj : MSIL module encountered; incremental linking is disabled for MSIL; performing full link
+  FileSharing.vcxproj -> C:\Users\Глеб\source\repos\FileSharing\x64\Debug\FileSharing.exe
