@@ -122,7 +122,7 @@ namespace FileSharing {
 
 		}
 #pragma endregion
-	private: std::size_t chooseBufferSize(std::streampos fileSize) {
+	private: int chooseBufferSize(std::streampos fileSize) {
 		if (fileSize < 1 * 1024 * 1024) {
 			return 1024;
 		}
@@ -204,7 +204,7 @@ namespace FileSharing {
 		}
 
 		if (bytesReceived == SOCKET_ERROR && isActive) {
-			MessageBox::Show(L"recvfrom() hostname error: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
+			MessageBox::Show(L"recvfrom() hostname (Receiver) error: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			closesocket(serverSocket);
 			WSACleanup();
 			free(buffer);
@@ -246,6 +246,7 @@ namespace FileSharing {
 		char* buffer;
 		int bufferSize = 256;
 		buffer = (char*)malloc(bufferSize);
+		memset(buffer, 0, bufferSize);
 		if (gethostname(buffer, bufferSize) == SOCKET_ERROR) {
 			MessageBox::Show(L"gethostname() error: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			closesocket(serverSocket);
@@ -254,21 +255,26 @@ namespace FileSharing {
 			return;
 		}
 		int clientLen = sizeof(sockaddr_in);
-		int sentBytes = sendto(serverSocket, // hostname
-			buffer,
-			bufferSize,
-			0,
-			reinterpret_cast<sockaddr*>(clientAddr),
-			clientLen);
+		int totalSent = 0;
+		int nameLen = strlen(buffer);
+		while (totalSent < nameLen) {
+			int sent = sendto(serverSocket,
+				buffer + totalSent,
+				nameLen - totalSent,
+				0,
+				reinterpret_cast<sockaddr*>(clientAddr),
+				clientLen);
+			if (sent == SOCKET_ERROR) {
+				MessageBox::Show(L"sendto() hostname error " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
+				closesocket(serverSocket);
+				WSACleanup();
+				free(buffer);
+				return;
+			}
+			totalSent += sent;
+		}
 
 		free(buffer);
-
-		if (sentBytes == SOCKET_ERROR) {
-			MessageBox::Show(L"sendto() hostname error " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
-			closesocket(serverSocket);
-			WSACleanup();
-			return;
-		}
 
 		SOCKET tcpListenSock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 		if (tcpListenSock == INVALID_SOCKET) {
@@ -303,7 +309,7 @@ namespace FileSharing {
 			return;
 		}
 
-		sentBytes = sendto(serverSocket, // server port
+		int sentBytes = sendto(serverSocket, // server port
 			reinterpret_cast<const char*>(&port),
 			sizeof(port),
 			0,
@@ -311,7 +317,12 @@ namespace FileSharing {
 			clientLen);
 		if (sentBytes == SOCKET_ERROR) {
 			MessageBox::Show(L"sendto() port error: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
+			closesocket(serverSocket);
+			closesocket(tcpListenSock);
+			WSACleanup();
+			return;
 		}
+		this->label1->Text = L"Подключено. Ожидание файла";
 
 		closesocket(serverSocket);
 		delete clientAddr;
@@ -389,7 +400,6 @@ namespace FileSharing {
 		this->Invoke(gcnew Action(this, &ReceiverPage::ShowProgress));
 
 		int recvBytes = 0, totalRecv = 0, lastProgress = -1;
-		String^ log = "";
 		while ((recvBytes = recv(tcpClientSock, buffer, bufferSize, 0)) > 0) {
 			recvFile.write(buffer, recvBytes);
 			totalRecv += recvBytes;
@@ -397,7 +407,6 @@ namespace FileSharing {
 			if (progress > lastProgress) {
 				lastProgress = progress;
 				this->BeginInvoke(gcnew Action<int>(this, &ReceiverPage::UpdateProgress), progress);
-				//log += "Progress: " + Convert::ToString(progress) + "\tLastProgress: " + Convert::ToString(lastProgress) + "\tTotal: " + Convert::ToString(totalRecv) + "\n";
 			}
 		}
 
@@ -412,8 +421,7 @@ namespace FileSharing {
 		label2->Visible = false;
 		progressBar1->Visible = false;
 
-		MessageBox::Show(log);
-		MessageBox::Show("Успешно! (получатель)");
+		MessageBox::Show(L"Успешно! (получатель)", "Информация", MessageBoxButtons::OK, MessageBoxIcon::Information);
 
 		closesocket(tcpClientSock);
 		closesocket(tcpListenSock);

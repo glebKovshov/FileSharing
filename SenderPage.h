@@ -3,6 +3,8 @@
 #include <ws2tcpip.h>
 #include <fstream>
 #include <msclr/marshal_cppstd.h>
+#include <iphlpapi.h>
+#pragma comment(lib, "iphlpapi.lib")
 #pragma comment(lib, "ws2_32.lib")
 
 using namespace System;
@@ -52,6 +54,7 @@ namespace FileSharing {
 		System::Windows::Forms::Label^ label2;
 		System::Windows::Forms::ProgressBar^ progressBar1;
 		String^ fPath = nullptr;
+		ULONG broadcast = 0;
 
 #pragma region Windows Form Designer generated code
 		void InitializeComponent(void)
@@ -155,6 +158,46 @@ namespace FileSharing {
 		}
 		
 	}
+	private: ULONG GetBroadcastForGatewayPrefix() {
+		IP_ADAPTER_INFO adapter[16];
+		DWORD buflen = sizeof(adapter);
+
+		if (GetAdaptersInfo(adapter, &buflen) != NO_ERROR)
+			return INADDR_NONE;
+
+		IP_ADAPTER_INFO* p = adapter;
+
+		while (p) {
+			const char* ipStr = p->IpAddressList.IpAddress.String;
+			const char* gwStr = p->GatewayList.IpAddress.String;
+
+			if (gwStr[0] == '\0' || strcmp(gwStr, "0.0.0.0") == 0) {
+				p = p->Next;
+				continue;
+			}
+
+			char ipPrefix[16] = { 0 };
+			char gwPrefix[16] = { 0 };
+
+			int a, b;
+			if (sscanf(ipStr, "%d.%d", &a, &b) == 2)
+				sprintf_s(ipPrefix, "%d.%d", a, b);
+
+			if (sscanf(gwStr, "%d.%d", &a, &b) == 2)
+				sprintf_s(gwPrefix, "%d.%d", a, b);
+
+			if (strcmp(ipPrefix, gwPrefix) == 0) {
+				DWORD ip = inet_addr(ipStr);
+				DWORD mask = inet_addr(p->IpAddressList.IpMask.String);
+				DWORD broadcast = (ip & mask) | ~mask;
+				return broadcast;
+			}
+
+			p = p->Next;
+		}
+
+		return INADDR_NONE;
+	}
 
 	private: void WaitingResponseRoutine() {
 		
@@ -185,10 +228,18 @@ namespace FileSharing {
 			return;
 		}
 
+		broadcast = GetBroadcastForGatewayPrefix();
+		if (broadcast == INADDR_NONE) {
+			MessageBox::Show(L"GetBroadcast() error", L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
+			closesocket(clientSocket);
+			WSACleanup();
+			return;
+		}
+
 		sockaddr_in broadcastAddr{};
 		broadcastAddr.sin_family = AF_INET;
 		broadcastAddr.sin_port = htons(12345);
-		broadcastAddr.sin_addr.s_addr = INADDR_BROADCAST;
+		broadcastAddr.sin_addr.s_addr = broadcast;
 
 		char hostname[256];
 		if (gethostname(hostname, sizeof(hostname)) == SOCKET_ERROR) {
@@ -214,21 +265,20 @@ namespace FileSharing {
 		sockaddr_in fromAddr{};
 		int fromLen = sizeof(fromAddr);
 		int bytes = 0;
+
 		bytes = recvfrom(clientSocket,
 			hostname,
-			sizeof(hostname),
+			sizeof(hostname) - 1,
 			0,
 			reinterpret_cast<sockaddr*>(&fromAddr),
-			(socklen_t*)&fromLen);
+			&fromLen);
 
 		if (bytes == SOCKET_ERROR) {
-			if (!isActive) return;
-			MessageBox::Show(L"recvfrom() hostname error: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
+			MessageBox::Show(L"recvfrom() hostname (Sender) error: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			closesocket(clientSocket);
 			WSACleanup();
 			return;
 		}
-
 		hostname[bytes] = '\0';
 
 		MessageBox::Show(L"Установлено соединение с " + gcnew System::String(hostname));
@@ -345,7 +395,8 @@ namespace FileSharing {
 		free(buffer);
 		sendFile.close();
 
-		MessageBox::Show("Успешно! (отправитель)");
+		MessageBox::Show(L"Успешно! (отправитель)", "Информация", MessageBoxButtons::OK, MessageBoxIcon::Information);
+
 
 		label2->Visible = false;
 		progressBar1->Visible = false;
