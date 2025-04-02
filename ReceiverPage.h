@@ -2,7 +2,6 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <fstream>
-#include <iostream>
 #pragma comment(lib, "ws2_32.lib")
 
 using namespace System::Windows::Forms;
@@ -255,26 +254,22 @@ namespace FileSharing {
 			return;
 		}
 		int clientLen = sizeof(sockaddr_in);
-		int totalSent = 0;
-		int nameLen = strlen(buffer);
-		while (totalSent < nameLen) {
-			int sent = sendto(serverSocket,
-				buffer + totalSent,
-				nameLen - totalSent,
-				0,
-				reinterpret_cast<sockaddr*>(clientAddr),
-				clientLen);
-			if (sent == SOCKET_ERROR) {
-				MessageBox::Show(L"sendto() hostname error " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
-				closesocket(serverSocket);
-				WSACleanup();
-				free(buffer);
-				return;
-			}
-			totalSent += sent;
-		}
+		int nameLen = strlen(buffer) + 1;
+		int sent = sendto(serverSocket,
+			buffer,
+			nameLen,
+			0,
+			reinterpret_cast<sockaddr*>(clientAddr),
+			clientLen);
 
 		free(buffer);
+
+		if (sent == SOCKET_ERROR) {
+			MessageBox::Show(L"sendto() hostname error " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
+			closesocket(serverSocket);
+			WSACleanup();
+			return;
+		}
 
 		SOCKET tcpListenSock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 		if (tcpListenSock == INVALID_SOCKET) {
@@ -417,14 +412,15 @@ namespace FileSharing {
 
 		free(buffer);
 		recvFile.close();
+		closesocket(tcpClientSock);
+		closesocket(tcpListenSock);
 
 		label2->Visible = false;
 		progressBar1->Visible = false;
 
 		MessageBox::Show(L"Успешно! (получатель)", "Информация", MessageBoxButtons::OK, MessageBoxIcon::Information);
 
-		closesocket(tcpClientSock);
-		closesocket(tcpListenSock);
+		goBack();
 		WSACleanup();
 	}
 

@@ -394,15 +394,14 @@ namespace FileSharing {
 		}
 		free(buffer);
 		sendFile.close();
+		closesocket(serverSocket);
+		WSACleanup();
 
 		MessageBox::Show(L"Успешно! (отправитель)", "Информация", MessageBoxButtons::OK, MessageBoxIcon::Information);
 
-
 		label2->Visible = false;
 		progressBar1->Visible = false;
-
-		closesocket(serverSocket);
-		WSACleanup();
+		goBack();
 	}
 	private: void UpdateProgress(int percent) {
 		if (percent < 0) percent = 0;
