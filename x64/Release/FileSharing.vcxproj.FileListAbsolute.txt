@@ -5,3 +5,10 @@ C:\Users\Глеб\Desktop\FileSharing-master\x64\Release\FileSharing.ReceiverPag
 C:\Users\Глеб\Desktop\FileSharing-master\x64\Release\FileSharing.SenderPage.resources
 C:\Users\Глеб\Desktop\FileSharing-master\x64\Release\FileSharing.vcxproj.GenerateResource.cache
 C:\Users\Глеб\Desktop\FileSharing-master\x64\Release\FileSharing.exe
+C:\Users\Глеб\Desktop\FileSharing-master\FileSharing\x64\Release\FileSharing.vcxproj.AssemblyReference.cache
+C:\Users\Глеб\Desktop\FileSharing-master\FileSharing\x64\Release\FileSharing.MainPage.resources
+C:\Users\Глеб\Desktop\FileSharing-master\FileSharing\x64\Release\FileSharing.MyForm.resources
+C:\Users\Глеб\Desktop\FileSharing-master\FileSharing\x64\Release\FileSharing.ReceiverPage.resources
+C:\Users\Глеб\Desktop\FileSharing-master\FileSharing\x64\Release\FileSharing.SenderPage.resources
+C:\Users\Глеб\Desktop\FileSharing-master\FileSharing\x64\Release\FileSharing.vcxproj.GenerateResource.cache
+C:\Users\Глеб\Desktop\FileSharing-master\FileSharing\x64\Release\FileSharing.exe

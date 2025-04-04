@@ -49,7 +49,8 @@ namespace FileSharing {
 		System::Windows::Forms::Panel^ Frame;
 		System::Action^ goBack;
 		SortedSet<String^>^ Devices = gcnew SortedSet<String^>();
-		volatile bool isActive = true;
+		volatile bool isDiscovering = true;
+		volatile bool isReceiving = true;
 		SOCKET serverSocket = INVALID_SOCKET;
 		SOCKET tcpListenSock = INVALID_SOCKET;
 		SOCKET tcpClientSock = INVALID_SOCKET;
@@ -136,7 +137,8 @@ namespace FileSharing {
 
 	private: System::Void BackButton_Click(System::Object^ sender, System::EventArgs^ e) {
 		//this->FindDevices->PerformLayout();
-		isActive = false;
+		isDiscovering = false;
+		isReceiving = false;
 		if (serverSocket != INVALID_SOCKET) {
 			closesocket(serverSocket);
 			serverSocket = INVALID_SOCKET;
@@ -193,7 +195,7 @@ namespace FileSharing {
 		int clientLen = sizeof(clientAddr);
 		
 		int bytesReceived = 0;
-		while (isActive && (bytesReceived = recvfrom(
+		while (isDiscovering && (bytesReceived = recvfrom(
 			serverSocket,
 			buffer,
 			hostnameSize - 1,
@@ -217,8 +219,8 @@ namespace FileSharing {
 			}
 		}
 
-		if (bytesReceived == SOCKET_ERROR && isActive) {
-			if (!isActive) {
+		if (bytesReceived == SOCKET_ERROR && isDiscovering) {
+			if (!isDiscovering) {
 				free(buffer);
 				return;
 			}
@@ -232,16 +234,16 @@ namespace FileSharing {
 		free(buffer);
 	}
 	private: void AddDeviceButton(DeviceInfo^ di)
-		   {
-			Button^ btn = gcnew Button();
-			btn->Tag = di->Addr;
-			btn->Text = di->Name;
-			btn->Size = Drawing::Size(270, 40);
-			btn->Location = Drawing::Point(3, 3 + 50 * FindDevices->Controls->Count);
+	{
+		Button^ btn = gcnew Button();
+		btn->Tag = di->Addr;
+		btn->Text = di->Name;
+		btn->Size = Drawing::Size(270, 40);
+		btn->Location = Drawing::Point(3, 3 + 50 * FindDevices->Controls->Count);
 			
-			btn->Click += gcnew EventHandler(this, &ReceiverPage::DeviceButton_Click);
-			FindDevices->Controls->Add(btn);
-		   }
+		btn->Click += gcnew EventHandler(this, &ReceiverPage::DeviceButton_Click);
+		FindDevices->Controls->Add(btn);
+	}
 
 	private: System::Void DeviceButton_Click(System::Object^ sender, System::EventArgs^ e) {
 		Button^ btn = safe_cast<Button^>(sender);
@@ -259,14 +261,15 @@ namespace FileSharing {
 
 		if (result == DialogResult::No) return;
 
-		isActive = false;
+		isDiscovering = false;
 		deviceButton = btn;
 
 		Clear();
 
 		Task::Run(gcnew Action(this, &ReceiverPage::RecvFileRoutine));
 	}
-	private: System::Void RecvFileRoutine(){
+	private: System::Void RecvFileRoutine() {
+
 		sockaddr_in* clientAddr = static_cast<sockaddr_in*>(safe_cast<IntPtr>(deviceButton->Tag).ToPointer());
 		
 		char* buffer;
@@ -292,7 +295,7 @@ namespace FileSharing {
 		free(buffer);
 
 		if (sent == SOCKET_ERROR) {
-			if (!isActive) return;
+			if (!isReceiving) return;
 			MessageBox::Show(L"sendto() hostname error (Receiver) " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			closesocket(serverSocket);
 			WSACleanup();
@@ -341,7 +344,7 @@ namespace FileSharing {
 			reinterpret_cast<sockaddr*>(clientAddr),
 			clientLen);
 		if (sentBytes == SOCKET_ERROR) {
-			if (!isActive) return;
+			if (!isReceiving) return;
 			MessageBox::Show(L"sendto() port error: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			closesocket(serverSocket);
 			closesocket(tcpListenSock);
@@ -367,7 +370,7 @@ namespace FileSharing {
 			reinterpret_cast<sockaddr*>(&tcpClientAddr),
 			(socklen_t*)&tcpClientAddrLen);
 		if (tcpClientSock == INVALID_SOCKET) {
-			if (!isActive) return;
+			if (!isReceiving) return;
 			MessageBox::Show(L"accept() error: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			closesocket(tcpListenSock);
 			WSACleanup();
@@ -380,7 +383,7 @@ namespace FileSharing {
 		while (totalBytes < sizeof(fileSize)) {
 			int bytes = recv(tcpClientSock, fileSizePtr + totalBytes, sizeof(fileSize) - totalBytes, 0);
 			if (bytes <= 0) {
-				if (!isActive) return;
+				if (!isReceiving) return;
 				MessageBox::Show(L"recv() error for fileSize: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 				closesocket(tcpClientSock);
 				closesocket(tcpListenSock);
@@ -395,7 +398,7 @@ namespace FileSharing {
 		while (totalBytes < sizeof(fPath) - 1) {
 			int bytes = recv(tcpClientSock, fPath + totalBytes, 1, 0);
 			if (bytes <= 0) {
-				if (!isActive) return;
+				if (!isReceiving) return;
 				MessageBox::Show(L"recv() error file name: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 				closesocket(tcpClientSock);
 				closesocket(tcpListenSock);
