@@ -1,17 +1,1 @@
-﻿  MyForm.cpp
-C:\Users\Глеб\source\repos\FileSharing\ReceiverPage.h(257,15): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-  (compiling source file 'MyForm.cpp')
-  
-C:\Users\Глеб\source\repos\FileSharing\SenderPage.h(183,8): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-  (compiling source file 'MyForm.cpp')
-  
-C:\Users\Глеб\source\repos\FileSharing\SenderPage.h(186,8): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-  (compiling source file 'MyForm.cpp')
-  
-C:\Users\Глеб\source\repos\FileSharing\SenderPage.h(190,16): warning C4996: 'inet_addr': Use inet_pton() or InetPton() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
-  (compiling source file 'MyForm.cpp')
-  
-C:\Users\Глеб\source\repos\FileSharing\SenderPage.h(191,18): warning C4996: 'inet_addr': Use inet_pton() or InetPton() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
-  (compiling source file 'MyForm.cpp')
-  
-  FileSharing.vcxproj -> C:\Users\Глеб\source\repos\FileSharing\x64\Release\FileSharing.exe
+﻿  FileSharing.vcxproj -> C:\Users\Глеб\source\repos\FileSharing\x64\Release\FileSharing.exe

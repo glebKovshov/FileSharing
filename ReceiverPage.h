@@ -35,13 +35,12 @@ namespace FileSharing {
 	protected:
 		~ReceiverPage()
 		{
-			MessageBox::Show(L"Penis");
 			if (components)
 			{
 				delete components;
 			}
 		}
-#ifndef DESIGN_MODE
+
 	private:
 		System::ComponentModel::Container ^components;
 		System::Windows::Forms::Label^ label1;
@@ -51,11 +50,13 @@ namespace FileSharing {
 		System::Action^ goBack;
 		SortedSet<String^>^ Devices = gcnew SortedSet<String^>();
 		volatile bool isActive = true;
-		SOCKET serverSocket;
-		Button^ deviceButton;
+		SOCKET serverSocket = INVALID_SOCKET;
+		SOCKET tcpListenSock = INVALID_SOCKET;
+		SOCKET tcpClientSock = INVALID_SOCKET;
+		Button^ deviceButton = nullptr;
 		System::Windows::Forms::Label^ label2;
 		System::Windows::Forms::ProgressBar^ progressBar1;
-#endif
+
 #pragma region Windows Form Designer generated code
 		void InitializeComponent(void)
 		{
@@ -140,7 +141,20 @@ namespace FileSharing {
 			closesocket(serverSocket);
 			serverSocket = INVALID_SOCKET;
 		}
+		if (tcpListenSock != INVALID_SOCKET) {
+			closesocket(tcpListenSock);
+			tcpListenSock = INVALID_SOCKET;
+		}
+		if (tcpClientSock != INVALID_SOCKET) {
+			closesocket(tcpClientSock);
+			tcpClientSock = INVALID_SOCKET;
+		}
+		deviceButton = nullptr;
 		Clear();
+		for each (Control ^ ctrl in this->Controls) {
+			this->Controls->Remove(ctrl);
+		}
+		WSACleanup();
 		goBack();
 	}
 	private: System::Void FindDeviceHandle(System::Object^ sender, System::EventArgs^ e) {
@@ -194,7 +208,8 @@ namespace FileSharing {
 				Devices->Add(deviceName);
 				DeviceInfo^ di = gcnew DeviceInfo();
 				clientAddr.sin_family = AF_INET;
-				sockaddr_in* addCopy = new sockaddr_in(clientAddr);
+				sockaddr_in* addCopy = (sockaddr_in*)malloc(sizeof(sockaddr_in));
+				memcpy(addCopy, &clientAddr, sizeof(sockaddr_in));
 				di->Addr = IntPtr(addCopy);
 				di->Name = deviceName;
 
@@ -203,6 +218,10 @@ namespace FileSharing {
 		}
 
 		if (bytesReceived == SOCKET_ERROR && isActive) {
+			if (!isActive) {
+				free(buffer);
+				return;
+			}
 			MessageBox::Show(L"recvfrom() hostname (Receiver) error: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			closesocket(serverSocket);
 			WSACleanup();
@@ -227,9 +246,17 @@ namespace FileSharing {
 	private: System::Void DeviceButton_Click(System::Object^ sender, System::EventArgs^ e) {
 		Button^ btn = safe_cast<Button^>(sender);
 		String^ deviceName = btn->Text;
+
+		this->FindDevices->Enabled = false;
+		this->BackButton->Enabled = false;
+
 		System::Windows::Forms::DialogResult result = MessageBox::Show(
 			L"Подключиться к устройству " + deviceName + "?", L"Подтверждение",
 			MessageBoxButtons::YesNo, MessageBoxIcon::Question);
+
+		this->FindDevices->Enabled = true;
+		this->BackButton->Enabled = true;
+
 		if (result == DialogResult::No) return;
 
 		isActive = false;
@@ -265,15 +292,17 @@ namespace FileSharing {
 		free(buffer);
 
 		if (sent == SOCKET_ERROR) {
-			MessageBox::Show(L"sendto() hostname error " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
+			if (!isActive) return;
+			MessageBox::Show(L"sendto() hostname error (Receiver) " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			closesocket(serverSocket);
 			WSACleanup();
 			return;
 		}
 
-		SOCKET tcpListenSock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+		tcpListenSock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 		if (tcpListenSock == INVALID_SOCKET) {
 			MessageBox::Show(L"TCP listen socket creation error: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
+			closesocket(serverSocket);
 			WSACleanup();
 			return;
 		}
@@ -286,6 +315,7 @@ namespace FileSharing {
 		if (bind(tcpListenSock, reinterpret_cast<sockaddr*>(&tcpServerBind), sizeof(tcpServerBind)) == SOCKET_ERROR) {
 			MessageBox::Show(L"TCP bind error: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			closesocket(tcpListenSock);
+			closesocket(serverSocket);
 			WSACleanup();
 			return;
 		}
@@ -311,6 +341,7 @@ namespace FileSharing {
 			reinterpret_cast<sockaddr*>(clientAddr),
 			clientLen);
 		if (sentBytes == SOCKET_ERROR) {
+			if (!isActive) return;
 			MessageBox::Show(L"sendto() port error: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			closesocket(serverSocket);
 			closesocket(tcpListenSock);
@@ -320,7 +351,7 @@ namespace FileSharing {
 		this->label1->Text = L"Подключено. Ожидание файла";
 
 		closesocket(serverSocket);
-		delete clientAddr;
+		free(clientAddr);
 		clientAddr = nullptr;
 		
 		if (listen(tcpListenSock, 1) == SOCKET_ERROR) {
@@ -332,10 +363,11 @@ namespace FileSharing {
 
 		sockaddr_in tcpClientAddr{};
 		int tcpClientAddrLen = sizeof(tcpClientAddr);
-		SOCKET tcpClientSock = accept(tcpListenSock,
+		tcpClientSock = accept(tcpListenSock,
 			reinterpret_cast<sockaddr*>(&tcpClientAddr),
 			(socklen_t*)&tcpClientAddrLen);
 		if (tcpClientSock == INVALID_SOCKET) {
+			if (!isActive) return;
 			MessageBox::Show(L"accept() error: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			closesocket(tcpListenSock);
 			WSACleanup();
@@ -348,6 +380,7 @@ namespace FileSharing {
 		while (totalBytes < sizeof(fileSize)) {
 			int bytes = recv(tcpClientSock, fileSizePtr + totalBytes, sizeof(fileSize) - totalBytes, 0);
 			if (bytes <= 0) {
+				if (!isActive) return;
 				MessageBox::Show(L"recv() error for fileSize: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 				closesocket(tcpClientSock);
 				closesocket(tcpListenSock);
@@ -362,6 +395,7 @@ namespace FileSharing {
 		while (totalBytes < sizeof(fPath) - 1) {
 			int bytes = recv(tcpClientSock, fPath + totalBytes, 1, 0);
 			if (bytes <= 0) {
+				if (!isActive) return;
 				MessageBox::Show(L"recv() error file name: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 				closesocket(tcpClientSock);
 				closesocket(tcpListenSock);
@@ -410,18 +444,18 @@ namespace FileSharing {
 			MessageBox::Show(L"recv() failed or connection closed prematurely: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 		}
 
+		MessageBox::Show(L"Успешно! (получатель)", "Информация", MessageBoxButtons::OK, MessageBoxIcon::Information);
+
 		free(buffer);
 		recvFile.close();
 		closesocket(tcpClientSock);
 		closesocket(tcpListenSock);
+		WSACleanup();
 
 		label2->Visible = false;
 		progressBar1->Visible = false;
 
-		MessageBox::Show(L"Успешно! (получатель)", "Информация", MessageBoxButtons::OK, MessageBoxIcon::Information);
-
 		goBack();
-		WSACleanup();
 	}
 
 	private: void UpdateProgress(int percent) {
@@ -443,7 +477,7 @@ namespace FileSharing {
 				IntPtr ptr = safe_cast<IntPtr>(btn->Tag);
 				sockaddr_in* addr = static_cast<sockaddr_in*>(ptr.ToPointer());
 				FindDevices->Controls->Remove(ctrl);
-				if (btn != deviceButton) delete addr;
+				if (btn != deviceButton) free(addr);
 			}
 		}
 	}

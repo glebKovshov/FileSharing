@@ -48,13 +48,12 @@ namespace FileSharing {
 		System::Windows::Forms::Label^ label1;
 		System::Windows::Forms::Panel^ DragFilePanel;
 		System::Action^ goBack;
-		SOCKET clientSocket;
-		SOCKET serverSocket;
+		SOCKET clientSocket = INVALID_SOCKET;
+		SOCKET serverSocket = INVALID_SOCKET;
 		volatile bool isActive = true;
 		System::Windows::Forms::Label^ label2;
 		System::Windows::Forms::ProgressBar^ progressBar1;
 		String^ fPath = nullptr;
-		ULONG broadcast = 0;
 
 #pragma region Windows Form Designer generated code
 		void InitializeComponent(void)
@@ -141,7 +140,18 @@ namespace FileSharing {
 	}
 	private: System::Void BackButton_Click(System::Object^ sender, System::EventArgs^ e) {
 		isActive = false;
-		if (clientSocket != INVALID_SOCKET) closesocket(clientSocket);
+		if (clientSocket != INVALID_SOCKET) {
+			closesocket(clientSocket);
+			clientSocket = INVALID_SOCKET;
+		}
+		if (serverSocket != INVALID_SOCKET) {
+			closesocket(serverSocket);
+			serverSocket = INVALID_SOCKET;
+		}
+		for each (Control ^ ctrl in this->Controls) {
+			this->Controls->Remove(ctrl);
+		}
+		WSACleanup();
 		goBack();
 	}
 	private: System::Void WaitingResponseHandle(System::Object^ sender, System::EventArgs^ e) {
@@ -228,7 +238,7 @@ namespace FileSharing {
 			return;
 		}
 
-		broadcast = GetBroadcastForGatewayPrefix();
+		ULONG broadcast = GetBroadcastForGatewayPrefix();
 		if (broadcast == INADDR_NONE) {
 			MessageBox::Show(L"GetBroadcast() error", L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			closesocket(clientSocket);
@@ -274,6 +284,7 @@ namespace FileSharing {
 			&fromLen);
 
 		if (bytes == SOCKET_ERROR) {
+			if (!isActive) return;
 			MessageBox::Show(L"recvfrom() hostname (Sender) error: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			closesocket(clientSocket);
 			WSACleanup();
@@ -281,7 +292,7 @@ namespace FileSharing {
 		}
 		hostname[bytes] = '\0';
 
-		MessageBox::Show(L"Установлено соединение с " + gcnew System::String(hostname));
+		MessageBox::Show(L"Установлено соединение с " + gcnew System::String(hostname), "Информация", MessageBoxButtons::OK, MessageBoxIcon::Information);
 
 		// Подключение установлено. Переход к отправке файла
 		Task::Run(gcnew Action(this, &SenderPage::SendFileRoutine));
@@ -297,6 +308,7 @@ namespace FileSharing {
 			reinterpret_cast<sockaddr*>(&fromAddr),
 			(socklen_t*)&fromLen);
 		if (bytes == SOCKET_ERROR) {
+			if (!isActive) return;
 			MessageBox::Show(L"recvfrom() port error: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			closesocket(clientSocket);
 			WSACleanup();
@@ -377,6 +389,10 @@ namespace FileSharing {
 			{
 				int sentBytes = send(serverSocket, buffer, static_cast<int>(bufferSize), 0);
 				if (sentBytes == SOCKET_ERROR) {
+					if (!isActive) {
+						free(buffer);
+						return;
+					}
 					MessageBox::Show(L"send() buffer failed: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 					closesocket(serverSocket);
 					WSACleanup();
@@ -395,12 +411,12 @@ namespace FileSharing {
 		free(buffer);
 		sendFile.close();
 		closesocket(serverSocket);
-		WSACleanup();
 
 		MessageBox::Show(L"Успешно! (отправитель)", "Информация", MessageBoxButtons::OK, MessageBoxIcon::Information);
 
 		label2->Visible = false;
 		progressBar1->Visible = false;
+		WSACleanup();
 		goBack();
 	}
 	private: void UpdateProgress(int percent) {
