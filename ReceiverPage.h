@@ -156,7 +156,7 @@ namespace FileSharing {
 		for each (Control ^ ctrl in this->Controls) {
 			this->Controls->Remove(ctrl);
 		}
-		WSACleanup();
+		
 		goBack();
 	}
 	private: System::Void FindDeviceHandle(System::Object^ sender, System::EventArgs^ e) {
@@ -164,16 +164,10 @@ namespace FileSharing {
 	}
 	private: void FindDeviceRoutine()
 	{
-		WSADATA wsaData;
-		if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-			MessageBox::Show(L"Failed to initialize Winsock", L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
-			return;
-		}
-
 		serverSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 		if (serverSocket == INVALID_SOCKET) {
 			MessageBox::Show(L"UDP socket creation error: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
-			WSACleanup();
+			
 			return;
 		}
 
@@ -185,7 +179,7 @@ namespace FileSharing {
 		if (bind(serverSocket, reinterpret_cast<sockaddr*>(&udpServerAddr), sizeof(udpServerAddr)) == SOCKET_ERROR) {
 			MessageBox::Show(L"UDP bind error: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			closesocket(serverSocket);
-			WSACleanup();
+			
 			return;
 		}
 
@@ -226,7 +220,7 @@ namespace FileSharing {
 			}
 			MessageBox::Show(L"recvfrom() hostname (Receiver) error: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			closesocket(serverSocket);
-			WSACleanup();
+			
 			free(buffer);
 			return;
 		}
@@ -268,6 +262,8 @@ namespace FileSharing {
 	}
 	private: System::Void RecvFileRoutine() {
 
+		Thread::Sleep(200);
+
 		sockaddr_in* clientAddr = static_cast<sockaddr_in*>(safe_cast<IntPtr>(deviceButton->Tag).ToPointer());
 		
 		char* buffer;
@@ -277,7 +273,7 @@ namespace FileSharing {
 		if (gethostname(buffer, bufferSize) == SOCKET_ERROR) {
 			MessageBox::Show(L"gethostname() error: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			closesocket(serverSocket);
-			WSACleanup();
+			
 			free(buffer);
 			return;
 		}
@@ -296,7 +292,7 @@ namespace FileSharing {
 			if (!isReceiving) return;
 			MessageBox::Show(L"sendto() hostname error (Receiver) " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			closesocket(serverSocket);
-			WSACleanup();
+			
 			return;
 		}
 
@@ -304,7 +300,7 @@ namespace FileSharing {
 		if (tcpListenSock == INVALID_SOCKET) {
 			MessageBox::Show(L"TCP listen socket creation error: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			closesocket(serverSocket);
-			WSACleanup();
+			
 			return;
 		}
 
@@ -317,7 +313,7 @@ namespace FileSharing {
 			MessageBox::Show(L"TCP bind error: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			closesocket(tcpListenSock);
 			closesocket(serverSocket);
-			WSACleanup();
+			
 			return;
 		}
 
@@ -331,7 +327,7 @@ namespace FileSharing {
 			MessageBox::Show(L"getsockname() error: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			closesocket(serverSocket);
 			closesocket(tcpListenSock);
-			WSACleanup();
+			
 			return;
 		}
 
@@ -346,7 +342,7 @@ namespace FileSharing {
 			MessageBox::Show(L"sendto() port error: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			closesocket(serverSocket);
 			closesocket(tcpListenSock);
-			WSACleanup();
+			
 			return;
 		}
 		this->label1->Text = L"Подключено. Ожидание файла";
@@ -358,7 +354,7 @@ namespace FileSharing {
 		if (listen(tcpListenSock, 1) == SOCKET_ERROR) {
 			MessageBox::Show(L"listen() error: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			closesocket(tcpListenSock);
-			WSACleanup();
+			
 			return;
 		}
 
@@ -371,7 +367,7 @@ namespace FileSharing {
 			if (!isReceiving) return;
 			MessageBox::Show(L"accept() error: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			closesocket(tcpListenSock);
-			WSACleanup();
+			
 			return;
 		}
 
@@ -385,7 +381,7 @@ namespace FileSharing {
 				MessageBox::Show(L"recv() error for fileSize: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 				closesocket(tcpClientSock);
 				closesocket(tcpListenSock);
-				WSACleanup();
+				
 				return;
 			}
 			totalBytes += bytes;
@@ -400,7 +396,7 @@ namespace FileSharing {
 				MessageBox::Show(L"recv() error file name: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 				closesocket(tcpClientSock);
 				closesocket(tcpListenSock);
-				WSACleanup();
+				
 				return;
 			}
 			if (fPath[totalBytes] == '\0')
@@ -420,7 +416,7 @@ namespace FileSharing {
 			MessageBox::Show(L"Error opening file for writing", L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			closesocket(tcpClientSock);
 			closesocket(tcpListenSock);
-			WSACleanup();
+			
 			return;
 		}
 
@@ -451,7 +447,7 @@ namespace FileSharing {
 		recvFile.close();
 		closesocket(tcpClientSock);
 		closesocket(tcpListenSock);
-		WSACleanup();
+		
 
 		label2->Visible = false;
 		progressBar1->Visible = false;

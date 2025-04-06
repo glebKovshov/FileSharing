@@ -1,8 +1,6 @@
 #pragma once
 #include "ReceiverPage.h"
 #include "SenderPage.h"
-#include <Windows.h>
-#pragma comment(lib, "Advapi32.lib")
 
 namespace FileSharing {
 
