@@ -230,8 +230,6 @@ namespace FileSharing {
 			free(buffer);
 			return;
 		}
-
-		free(buffer);
 	}
 	private: void AddDeviceButton(DeviceInfo^ di)
 	{
