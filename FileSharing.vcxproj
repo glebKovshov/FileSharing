@@ -121,6 +121,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MyForm.cpp" />
+    <ClCompile Include="ReceiverPage.cpp" />
+    <ClCompile Include="SenderPage.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MainPage.h">
