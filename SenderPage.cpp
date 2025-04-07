@@ -24,9 +24,7 @@ System::Void SenderPage::BackButton_Click(System::Object^ sender, System::EventA
 		closesocket(serverSocket);
 		serverSocket = INVALID_SOCKET;
 	}
-	for each (Control ^ ctrl in this->Controls) {
-		this->Controls->Remove(ctrl);
-	}
+	this->Controls->Clear();
 	goBack();
 }
 

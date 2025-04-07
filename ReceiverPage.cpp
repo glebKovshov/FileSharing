@@ -32,9 +32,7 @@ System::Void ReceiverPage::BackButton_Click(System::Object^ sender, System::Even
 	}
 	deviceButton = nullptr;
 	Clear();
-	for each (Control ^ ctrl in this->Controls) {
-		this->Controls->Remove(ctrl);
-	}
+	this->Controls->Clear();
 	goBack();
 }
 

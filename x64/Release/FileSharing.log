@@ -1,5 +1,3 @@
-﻿  MyForm.cpp
-  ReceiverPage.cpp
-C:\Users\Глеб\Desktop\FileSharing-master\FileSharing\ReceiverPage.cpp(163,14): warning C4267: инициализация: преобразование из "size_t" в "int"; возможна потеря данных
-  Создание кода...
+﻿  ReceiverPage.cpp
+C:\Users\Глеб\Desktop\FileSharing-master\FileSharing\ReceiverPage.cpp(161,14): warning C4267: инициализация: преобразование из "size_t" в "int"; возможна потеря данных
   FileSharing.vcxproj -> C:\Users\Глеб\Desktop\FileSharing-master\FileSharing\x64\Release\FileSharing.exe

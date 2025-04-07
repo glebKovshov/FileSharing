@@ -120,6 +120,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="MainPage.cpp" />
     <ClCompile Include="MyForm.cpp" />
     <ClCompile Include="ReceiverPage.cpp" />
     <ClCompile Include="SenderPage.cpp" />
