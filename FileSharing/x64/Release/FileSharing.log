@@ -1,1 +1,1 @@
-﻿  FileSharing.vcxproj -> C:\Users\Глеб\source\repos\FileSharing\x64\Release\FileSharing.exe
+﻿cl : command line  error D8016: '/clr' and '/MT' command-line options are incompatible

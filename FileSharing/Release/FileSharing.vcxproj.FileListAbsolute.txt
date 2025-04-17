@@ -1,0 +1,6 @@
+C:\Users\Глеб\source\repos\FileSharing\FileSharing\Release\FileSharing.vcxproj.AssemblyReference.cache
+C:\Users\Глеб\source\repos\FileSharing\FileSharing\Release\FileSharing.MainPage.resources
+C:\Users\Глеб\source\repos\FileSharing\FileSharing\Release\FileSharing.MyForm.resources
+C:\Users\Глеб\source\repos\FileSharing\FileSharing\Release\FileSharing.ReceiverPage.resources
+C:\Users\Глеб\source\repos\FileSharing\FileSharing\Release\FileSharing.SenderPage.resources
+C:\Users\Глеб\source\repos\FileSharing\FileSharing\Release\FileSharing.vcxproj.GenerateResource.cache

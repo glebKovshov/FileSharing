@@ -1,0 +1,12 @@
+﻿  MainPage.cpp
+  MyForm.cpp
+  ReceiverPage.cpp
+  SenderPage.cpp
+C:\Users\Глеб\source\repos\FileSharing\SenderPage.cpp(66,7): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\Users\Глеб\source\repos\FileSharing\SenderPage.cpp(69,7): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\Users\Глеб\source\repos\FileSharing\SenderPage.cpp(73,15): warning C4996: 'inet_addr': Use inet_pton() or InetPton() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+C:\Users\Глеб\source\repos\FileSharing\SenderPage.cpp(74,17): warning C4996: 'inet_addr': Use inet_pton() or InetPton() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+  .NETFramework,Version=v4.7.2.AssemblyAttributes.cpp
+  Generating Code...
+  MainPage.obj : MSIL module encountered; incremental linking is disabled for MSIL; performing full link
+  FileSharing.vcxproj -> C:\Users\Глеб\source\repos\FileSharing\Release\FileSharing.exe

@@ -149,7 +149,7 @@ System::Void ReceiverPage::RecvFileRoutine() {
 	char* buffer;
 	int bufferSize = 256;
 	buffer = (char*)malloc(bufferSize);
-	memset(buffer, 0, bufferSize);
+
 	if (gethostname(buffer, bufferSize) == SOCKET_ERROR) {
 		MessageBox::Show(L"gethostname() error: " + Convert::ToString(WSAGetLastError()), L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 		closesocket(serverSocket);
@@ -157,9 +157,10 @@ System::Void ReceiverPage::RecvFileRoutine() {
 		free(buffer);
 		return;
 	}
+
 	int clientLen = sizeof(sockaddr_in);
 	int nameLen = strlen(buffer) + 1;
-	int sent = sendto(serverSocket,
+	int sent = sendto(serverSocket,  // hostname
 		buffer,
 		nameLen,
 		0,
@@ -290,7 +291,32 @@ System::Void ReceiverPage::RecvFileRoutine() {
 	size_t pos = fullPath.find_last_of("\\/");
 	std::string fileNameOnly = (pos != std::string::npos) ? fullPath.substr(pos + 1) : fullPath;
 
-	std::ofstream recvFile(fileNameOnly, std::ios::binary);
+	String^ dataDir = Path::Combine(
+		Environment::GetFolderPath(Environment::SpecialFolder::LocalApplicationData),
+		"FileSharing");
+	if (!Directory::Exists(dataDir))
+	{
+		try
+		{
+			Directory::CreateDirectory(dataDir);
+		}
+		catch (Exception^ ex)
+		{
+			MessageBox::Show(
+				"Не удалось создать директорию для сохранения файлов:\n" + ex->Message,
+				"Error",
+				MessageBoxButtons::OK,
+				MessageBoxIcon::Error
+			);
+			closesocket(tcpClientSock);
+			closesocket(tcpListenSock);
+			return;
+		}
+	}
+
+	String^ savePath = Path::Combine(dataDir, gcnew String(fileNameOnly.c_str()));
+	std::ofstream recvFile(msclr::interop::marshal_as<std::string>(savePath),std::ios::binary);
+
 	if (!recvFile)
 	{
 		MessageBox::Show(L"Error opening file for writing", L"Error", MessageBoxButtons::OK, MessageBoxIcon::Error);

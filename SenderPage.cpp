@@ -137,6 +137,7 @@ void SenderPage::WaitingResponseRoutine() {
 
 		return;
 	}
+
 	memset(hostname, 0, sizeof(hostname));
 	sockaddr_in fromAddr{};
 	int fromLen = sizeof(fromAddr);

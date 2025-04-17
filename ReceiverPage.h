@@ -2,6 +2,7 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <fstream>
+#include <msclr/marshal_cppstd.h>
 #pragma comment(lib, "ws2_32.lib")
 
 using namespace System::Windows::Forms;
@@ -10,6 +11,7 @@ using namespace System::Threading::Tasks;
 using namespace System::Drawing;
 using namespace System::Collections::Generic;
 using namespace System;
+using namespace System::IO;
 
 ref struct DeviceInfo
 {
