@@ -1,5 +1,5 @@
 if(WIN32)
-    execute_process(COMMAND "@QT_DEPLOY_TOOL@" --release --compiler-runtime --no-translations
+    execute_process(COMMAND "@QT_DEPLOY_TOOL@" --release --no-compiler-runtime --no-translations
         "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/FileSharing.exe" RESULT_VARIABLE result)
     file(COPY "@QT_BIN_DIR@/../plugins/platforms/qoffscreen.dll"
         DESTINATION "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/platforms")
