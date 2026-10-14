@@ -13,6 +13,17 @@ extra data, changed metadata, disconnects, cancellation, timeouts, repeated
 transfers and collision-safe filenames. `ui_tests` checks first-launch state,
 explicit sharing, stopping, receiver controls and readable error display.
 
+For memory and undefined-behavior checks with GCC/Clang:
+
+```sh
+cmake -S . -B build-sanitized -DCMAKE_BUILD_TYPE=Debug -DFILESHARING_SANITIZE=ON
+cmake --build build-sanitized --parallel
+ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build-sanitized --output-on-failure
+```
+
+Leak detection is disabled for these runs because system Qt/platform plugins
+keep process-wide caches. Address and undefined-behavior checks remain enabled.
+
 To render both native UI screens without a display:
 
 ```sh

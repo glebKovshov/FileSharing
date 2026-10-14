@@ -20,9 +20,10 @@ QString fileName(const QString &input) {
 }
 qint64 fileSize(const QJsonValue &value) {
     const auto number = value.toDouble(-1);
-    if (!value.isDouble() || !std::isfinite(number) || number < 0 || number > MaxFileSize || std::floor(number) != number)
+    const auto integer = value.toInteger(-1);
+    if (!value.isDouble() || !std::isfinite(number) || integer < 0 || integer > MaxFileSize || std::floor(number) != number)
         throw Error(QStringLiteral("Некорректный размер файла"));
-    return static_cast<qint64>(number);
+    return integer;
 }
 QJsonObject message(const QString &type, QJsonObject values) {
     values.insert("version", Version);

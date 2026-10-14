@@ -43,6 +43,8 @@ private slots:
         for (const auto &value : QList<QJsonValue>{QJsonValue(true), QJsonValue(-1), QJsonValue(1.5), QJsonValue("12")})
             QVERIFY_EXCEPTION_THROWN(Protocol::fileSize(value), Protocol::Error);
         QVERIFY_EXCEPTION_THROWN(Protocol::decode(QByteArray("\xff\xfe")), Protocol::Error);
+        const auto tooLarge = QJsonDocument::fromJson("{\"size\":9007199254740993}").object().value("size");
+        QVERIFY_EXCEPTION_THROWN(Protocol::fileSize(tooLarge), Protocol::Error);
     }
     void exactBytes_data() {
         QTest::addColumn<int>("length");
@@ -134,6 +136,9 @@ private slots:
         QVERIFY(source.open(QIODevice::WriteOnly));
         const QByteArray data("no garbage on first launch\0binary\xff", 34);
         source.write(data); source.close();
+        QVERIFY(QDir().mkpath(folder.filePath("downloads")));
+        QFile existing(QDir(folder.filePath("downloads")).filePath(name));
+        QVERIFY(existing.open(QIODevice::WriteOnly)); existing.write("keep me"); existing.close();
         SharingService sender(nullptr, 0), receiver(nullptr, 0);
         sender.setOffer(path);
         receiver.search();
@@ -150,7 +155,35 @@ private slots:
             QVERIFY(result.open(QIODevice::ReadOnly));
             QCOMPARE(result.readAll(), data);
         }
-        QCOMPARE(QDir(folder.filePath("downloads")).entryList(QDir::Files).size(), 2);
+        QCOMPARE(QDir(folder.filePath("downloads")).entryList(QDir::Files).size(), 3);
+        QVERIFY(existing.open(QIODevice::ReadOnly)); QCOMPARE(existing.readAll(), QByteArray("keep me"));
+        sender.stop(); receiver.stop();
+        QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+    }
+    void sourceFailureAllowsRetry() {
+        QTemporaryDir folder;
+        const auto path = folder.filePath("retry.bin");
+        QFile source(path);
+        QVERIFY(source.open(QIODevice::WriteOnly)); source.write("hello"); source.close();
+        SharingService sender(nullptr, 0), receiver(nullptr, 0);
+        sender.setOffer(path); receiver.search();
+        const auto removeConnection = connect(&sender, &SharingService::sessionStarted, this, [&source] { QVERIFY(source.remove()); });
+        sender.sendDatagram(sender.currentOffer(), QHostAddress::LocalHost, receiver.discoveryPort());
+        QTRY_COMPARE(receiver.availablePeers().size(), 1);
+        auto *first = receiver.receive(receiver.availablePeers().first(), folder.filePath("downloads"));
+        QSignalSpy errors(first, &Transfer::failed);
+        QTRY_COMPARE_WITH_TIMEOUT(errors.size(), 1, 5000);
+        QTRY_VERIFY(!sender.busy()); QVERIFY(!receiver.busy());
+        QVERIFY(QDir(folder.filePath("downloads")).entryList(QDir::Files | QDir::Hidden).isEmpty());
+        disconnect(removeConnection);
+        QVERIFY(source.open(QIODevice::WriteOnly)); source.write("hello"); source.close();
+        sender.setOffer(path);
+        sender.sendDatagram(sender.currentOffer(), QHostAddress::LocalHost, receiver.discoveryPort());
+        QTRY_COMPARE(receiver.availablePeers().first().offer, sender.currentOffer().value("offer").toString());
+        auto *second = receiver.receive(receiver.availablePeers().first(), folder.filePath("downloads"));
+        QSignalSpy success(second, &Transfer::finished);
+        QTRY_COMPARE_WITH_TIMEOUT(success.size(), 1, 5000);
+        QTRY_VERIFY(!sender.busy());
         sender.stop(); receiver.stop();
         QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
     }

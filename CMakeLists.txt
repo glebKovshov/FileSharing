@@ -12,6 +12,11 @@ add_library(filesharing_core
     src/core/sharingservice.cpp src/core/sharingservice.h)
 target_include_directories(filesharing_core PUBLIC src)
 target_link_libraries(filesharing_core PUBLIC Qt6::Core Qt6::Network)
+option(FILESHARING_SANITIZE "Enable AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
+if(FILESHARING_SANITIZE AND NOT MSVC)
+    target_compile_options(filesharing_core PUBLIC -fsanitize=address,undefined -fno-omit-frame-pointer)
+    target_link_options(filesharing_core PUBLIC -fsanitize=address,undefined)
+endif()
 qt_add_executable(FileSharing WIN32 MACOSX_BUNDLE src/main.cpp src/ui/mainwindow.cpp src/ui/mainwindow.h resources.qrc)
 target_link_libraries(FileSharing PRIVATE filesharing_core Qt6::Widgets)
 set_target_properties(FileSharing PROPERTIES
