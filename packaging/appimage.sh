@@ -26,6 +26,9 @@ export LDAI_OUTPUT="FileSharing-2.0.0-linux-x86_64.AppImage"
 qt_plugins=$("$QMAKE" -query QT_INSTALL_PLUGINS)
 mkdir -p "$app_dir/usr/plugins/wayland-graphics-integration-client"
 cp -a "$qt_plugins/wayland-graphics-integration-client/." "$app_dir/usr/plugins/wayland-graphics-integration-client/"
+for plugin in "$app_dir/usr/plugins/wayland-graphics-integration-client/"*.so; do
+    patchelf --set-rpath '$ORIGIN/../../lib' "$plugin"
+done
 cd "$output_dir"
 "$build_dir/appimage-tools/linuxdeploy-x86_64.AppImage" --appdir "$app_dir" \
     --desktop-file "$repo_dir/packaging/filesharing.desktop" --icon-file "$app_dir/usr/share/icons/hicolor/scalable/apps/filesharing.svg" \
