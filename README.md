@@ -14,7 +14,7 @@ Python, .NET, C++/CLI и Windows Forms для запуска не нужны.
 | Платформа | Пакет | Установка |
 | --- | --- | --- |
 | Windows 10/11, x64 | `.exe` | Мастер установки, ярлыки и удаление через настройки ОС |
-| macOS 11+, Intel / Apple Silicon | `.dmg` | Перетащите FileSharing в Applications |
+| macOS 12+, Intel / Apple Silicon | `.dmg` | Перетащите FileSharing в Applications |
 | Linux x64, glibc 2.35+ | `.AppImage` | `chmod +x FileSharing-*.AppImage`, затем запустите файл |
 | Ubuntu / Debian, x64 / ARM64 | `.deb` | `sudo apt install ./filesharing_*.deb` |
 | Fedora / RPM-дистрибутивы | `.rpm` | `sudo dnf install ./filesharing-*.rpm` |
