@@ -1,20 +1,20 @@
 # FileSharing 2
 
-Кроссплатформенное приложение для обмена файлами в локальной сети на Qt 6
-(PySide6). Поддерживает Windows, Linux и macOS; .NET и Windows Forms не нужны.
+Приложение для обмена файлами в локальной сети на **C++17 и Qt 6**.
+Windows, Linux и macOS. Без Python, .NET, C++/CLI и Windows Forms.
 
-## Запуск из исходников
+## Сборка
 
-Нужен Python 3.11 или новее.
+Нужны CMake 3.21+, компилятор C++17 и Qt 6.2+ (Core, Network, Widgets, Test).
 
 ```sh
-python -m venv .venv
-# Linux / macOS
-.venv/bin/python -m pip install -e '.[dev]'
-.venv/bin/python -m filesharing.app
-# Windows
-.venv\Scripts\python -m pip install -e ".[dev]"
-.venv\Scripts\python -m filesharing.app
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release
+ctest --test-dir build -C Release --output-on-failure
 ```
+
+На Linux: `./build/FileSharing`. На macOS: `open build/FileSharing.app`.
+На Windows: `build\Release\FileSharing.exe` (для генератора Visual Studio).
+Укажите `-DCMAKE_PREFIX_PATH=/путь/к/Qt` при необходимости.
 
 Предыдущая версия C++/CLI сохранена в истории Git (тег `v1.0`).

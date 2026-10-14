@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=FileSharing
+Comment=Share files across your local network
+Comment[ru]=Обмен файлами в локальной сети
+Exec=FileSharing
+Icon=filesharing
+Terminal=false
+Categories=Network;FileTransfer;

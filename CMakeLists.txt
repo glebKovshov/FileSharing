@@ -1,0 +1,40 @@
+cmake_minimum_required(VERSION 3.21)
+project(FileSharing VERSION 2.0.0 LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+include(CTest)
+find_package(Qt6 6.2 REQUIRED COMPONENTS Core Network Widgets)
+add_library(filesharing_core
+    src/core/protocol.cpp src/core/protocol.h
+    src/core/transfer.cpp src/core/transfer.h
+    src/core/sharingservice.cpp src/core/sharingservice.h)
+target_include_directories(filesharing_core PUBLIC src)
+target_link_libraries(filesharing_core PUBLIC Qt6::Core Qt6::Network)
+qt_add_executable(FileSharing WIN32 MACOSX_BUNDLE src/main.cpp src/ui/mainwindow.cpp src/ui/mainwindow.h resources.qrc)
+target_link_libraries(FileSharing PRIVATE filesharing_core Qt6::Widgets)
+set_target_properties(FileSharing PROPERTIES
+    MACOSX_BUNDLE_GUI_IDENTIFIER "io.github.glebKovshov.FileSharing"
+    MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
+    MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
+    MACOSX_BUNDLE_BUNDLE_NAME "FileSharing")
+if(MSVC)
+    target_compile_options(filesharing_core PRIVATE /W4 /utf-8)
+    target_compile_options(FileSharing PRIVATE /W4 /utf-8)
+else()
+    target_compile_options(filesharing_core PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(FileSharing PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+if(BUILD_TESTING)
+    find_package(Qt6 REQUIRED COMPONENTS Test)
+    add_executable(core_tests tests/core_tests.cpp)
+    target_link_libraries(core_tests PRIVATE filesharing_core Qt6::Test)
+    add_test(NAME core_tests COMMAND core_tests)
+    set_tests_properties(core_tests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+endif()
+install(TARGETS FileSharing BUNDLE DESTINATION . RUNTIME DESTINATION bin)
+if(UNIX AND NOT APPLE)
+    install(FILES packaging/filesharing.desktop DESTINATION share/applications)
+    install(FILES assets/icon.svg DESTINATION share/icons/hicolor/scalable/apps RENAME filesharing.svg)
+endif()
