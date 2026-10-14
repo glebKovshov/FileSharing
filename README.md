@@ -61,7 +61,7 @@ FUSE, запускайте AppImage с `APPIMAGE_EXTRACT_AND_RUN=1`.
 Command Line Tools и Qt SDK. На Ubuntu / Debian:
 
 ```sh
-sudo apt install build-essential cmake ninja-build qt6-base-dev qt6-svg-dev
+sudo apt install build-essential cmake ninja-build qt6-base-dev libqt6svg6-dev
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel
 ctest --test-dir build --output-on-failure

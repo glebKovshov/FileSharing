@@ -30,13 +30,15 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build qt6-base-dev qt6-svg-dev qt6-wayland libgl1-mesa-dev libxkbcommon-x11-0 libxcb-cursor0 rpm patchelf
+          sudo apt-get install -y ninja-build qt6-base-dev libqt6svg6-dev qt6-wayland libgl1-mesa-dev libxkbcommon-x11-0 libxcb-cursor0 rpm patchelf
       - uses: jurplel/install-qt-action@v4
         if: runner.os != 'Linux'
         with:
           version: '6.8.3'
           arch: ${{ matrix.qt-arch }}
           cache: true
+      - uses: ilammy/msvc-dev-cmd@v1
+        if: runner.os == 'Windows'
       - name: Configure
         shell: bash
         run: |
@@ -52,7 +54,12 @@ jobs:
           QT_QPA_PLATFORM: offscreen
         run: ctest --test-dir build -C Release --output-on-failure
       - name: Package
-        run: cpack --config build/CPackConfig.cmake -C Release -B artifacts
+        shell: bash
+        run: |
+          if ! cpack --config build/CPackConfig.cmake -C Release -B artifacts; then
+            find artifacts -name '*.log' -maxdepth 8 -exec tail -80 {} \;
+            exit 1
+          fi
       - name: Build portable Linux AppImage
         if: matrix.label == 'linux-x64'
         run: packaging/appimage.sh build artifacts
