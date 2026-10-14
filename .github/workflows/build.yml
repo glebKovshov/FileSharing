@@ -1,0 +1,86 @@
+name: Build, test and package
+on:
+  push:
+    branches: [master]
+    tags: ['v2.*']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            label: linux-x64
+          - os: ubuntu-24.04-arm
+            label: linux-arm64
+          - os: windows-2022
+            label: windows-x64
+            qt-arch: win64_msvc2022_64
+          - os: macos-14
+            label: macos-universal
+            qt-arch: clang_64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Linux build tools and Qt
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build qt6-base-dev qt6-svg-dev qt6-wayland libgl1-mesa-dev libxkbcommon-x11-0 libxcb-cursor0 rpm patchelf
+      - uses: jurplel/install-qt-action@v4
+        if: runner.os != 'Linux'
+        with:
+          version: '6.8.3'
+          arch: ${{ matrix.qt-arch }}
+          cache: true
+      - name: Configure
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            cmake -S . -B build -DCMAKE_BUILD_TYPE=Release '-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'
+          else
+            cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          fi
+      - name: Build
+        run: cmake --build build --config Release --parallel 3
+      - name: Test
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: ctest --test-dir build -C Release --output-on-failure
+      - name: Package
+        run: cpack --config build/CPackConfig.cmake -C Release -B artifacts
+      - name: Build portable Linux AppImage
+        if: matrix.label == 'linux-x64'
+        run: packaging/appimage.sh build artifacts
+      - name: Smoke test Linux AppImage
+        if: matrix.label == 'linux-x64'
+        env:
+          QT_QPA_PLATFORM: offscreen
+          APPIMAGE_EXTRACT_AND_RUN: '1'
+        run: artifacts/FileSharing-2.0.0-linux-x86_64.AppImage --smoke-test
+      - name: Smoke test packaged Windows executable
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Expand-Archive artifacts/FileSharing-2.0.0-windows-x64.zip -DestinationPath artifacts/smoke
+          $exe = Get-ChildItem artifacts/smoke -Filter FileSharing.exe -Recurse | Select-Object -First 1
+          $env:QT_QPA_PLATFORM = 'offscreen'
+          $process = Start-Process $exe.FullName -ArgumentList '--smoke-test' -PassThru -Wait
+          if ($process.ExitCode -ne 0) { throw "Packaged executable failed: $($process.ExitCode)" }
+      - name: Upload installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: FileSharing-${{ matrix.label }}
+          if-no-files-found: error
+          path: |
+            artifacts/*.exe
+            artifacts/*.zip
+            artifacts/*.dmg
+            artifacts/*.deb
+            artifacts/*.rpm
+            artifacts/*.tar.gz
+            artifacts/*.AppImage

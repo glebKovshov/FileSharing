@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>CFBundleExecutable</key><string>FileSharing</string>
+<key>CFBundleIdentifier</key><string>io.github.glebKovshov.FileSharing</string>
+<key>CFBundleName</key><string>FileSharing</string>
+<key>CFBundleDisplayName</key><string>FileSharing</string>
+<key>CFBundlePackageType</key><string>APPL</string>
+<key>CFBundleVersion</key><string>@PROJECT_VERSION@</string>
+<key>CFBundleShortVersionString</key><string>@PROJECT_VERSION@</string>
+<key>NSHighResolutionCapable</key><true/>
+<key>NSLocalNetworkUsageDescription</key><string>FileSharing discovers nearby computers and transfers files on your local network.</string>
+</dict></plist>

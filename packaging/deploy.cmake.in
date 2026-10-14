@@ -1,0 +1,10 @@
+if(WIN32)
+    execute_process(COMMAND "@QT_DEPLOY_TOOL@" --release --compiler-runtime --no-translations
+        "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/FileSharing.exe" RESULT_VARIABLE result)
+elseif(APPLE)
+    execute_process(COMMAND "@QT_DEPLOY_TOOL@" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/FileSharing.app"
+        -always-overwrite -no-translations -codesign=- RESULT_VARIABLE result)
+endif()
+if(NOT result EQUAL 0)
+    message(FATAL_ERROR "Qt runtime deployment failed: ${result}")
+endif()

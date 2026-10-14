@@ -19,6 +19,9 @@ set_target_properties(FileSharing PROPERTIES
     MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
     MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
     MACOSX_BUNDLE_BUNDLE_NAME "FileSharing")
+if(APPLE)
+    set_target_properties(FileSharing PROPERTIES MACOSX_BUNDLE_INFO_PLIST "${PROJECT_SOURCE_DIR}/packaging/Info.plist.in")
+endif()
 if(MSVC)
     target_compile_options(filesharing_core PRIVATE /W4 /utf-8)
     target_compile_options(FileSharing PRIVATE /W4 /utf-8)
@@ -46,3 +49,4 @@ if(UNIX AND NOT APPLE)
     install(FILES packaging/filesharing.desktop DESTINATION share/applications)
     install(FILES assets/icon.svg DESTINATION share/icons/hicolor/scalable/apps RENAME filesharing.svg)
 endif()
+include(packaging/Packaging.cmake)
