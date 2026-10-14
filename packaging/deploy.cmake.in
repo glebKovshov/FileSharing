@@ -1,9 +1,13 @@
 if(WIN32)
     execute_process(COMMAND "@QT_DEPLOY_TOOL@" --release --compiler-runtime --no-translations
         "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/FileSharing.exe" RESULT_VARIABLE result)
+    file(COPY "@QT_BIN_DIR@/../plugins/platforms/qoffscreen.dll"
+        DESTINATION "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/platforms")
 elseif(APPLE)
+    file(COPY "@QT_BIN_DIR@/../plugins/platforms/libqoffscreen.dylib"
+        DESTINATION "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/FileSharing.app/Contents/PlugIns/platforms")
     execute_process(COMMAND "@QT_DEPLOY_TOOL@" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/FileSharing.app"
-        -always-overwrite -no-translations -codesign=- RESULT_VARIABLE result)
+        -always-overwrite -codesign=- RESULT_VARIABLE result)
 endif()
 if(NOT result EQUAL 0)
     message(FATAL_ERROR "Qt runtime deployment failed: ${result}")

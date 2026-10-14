@@ -22,6 +22,10 @@ export APPIMAGE_EXTRACT_AND_RUN=1
 export EXTRA_QT_MODULES="svg;waylandclient"
 export EXTRA_PLATFORM_PLUGINS="libqoffscreen.so;libqwayland-egl.so;libqwayland-generic.so"
 export LDAI_OUTPUT="FileSharing-2.0.0-linux-x86_64.AppImage"
+# Qt 6's EGL integration is dynamically loaded and not discovered as an ELF dependency.
+qt_plugins=$("$QMAKE" -query QT_INSTALL_PLUGINS)
+mkdir -p "$app_dir/usr/plugins/wayland-graphics-integration-client"
+cp -a "$qt_plugins/wayland-graphics-integration-client/." "$app_dir/usr/plugins/wayland-graphics-integration-client/"
 cd "$output_dir"
 "$build_dir/appimage-tools/linuxdeploy-x86_64.AppImage" --appdir "$app_dir" \
     --desktop-file "$repo_dir/packaging/filesharing.desktop" --icon-file "$app_dir/usr/share/icons/hicolor/scalable/apps/filesharing.svg" \

@@ -75,9 +75,19 @@ jobs:
         run: |
           Expand-Archive artifacts/FileSharing-2.0.0-windows-x64.zip -DestinationPath artifacts/smoke
           $exe = Get-ChildItem artifacts/smoke -Filter FileSharing.exe -Recurse | Select-Object -First 1
+          Remove-Item Env:QT_PLUGIN_PATH -ErrorAction SilentlyContinue
+          Remove-Item Env:QML2_IMPORT_PATH -ErrorAction SilentlyContinue
+          $env:PATH = ($env:PATH -split ';' | Where-Object { $_ -notlike "$env:QT_ROOT_DIR*" }) -join ';'
           $env:QT_QPA_PLATFORM = 'offscreen'
           $process = Start-Process $exe.FullName -ArgumentList '--smoke-test' -PassThru -Wait
           if ($process.ExitCode -ne 0) { throw "Packaged executable failed: $($process.ExitCode)" }
+      - name: Smoke test packaged macOS app
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          hdiutil attach artifacts/FileSharing-2.0.0-macos-universal.dmg -mountpoint "$RUNNER_TEMP/filesharing-dmg" -nobrowse
+          env -u QT_PLUGIN_PATH -u QML2_IMPORT_PATH QT_QPA_PLATFORM=offscreen "$RUNNER_TEMP/filesharing-dmg/FileSharing.app/Contents/MacOS/FileSharing" --smoke-test
+          hdiutil detach "$RUNNER_TEMP/filesharing-dmg"
       - name: Upload installers
         uses: actions/upload-artifact@v4
         with:
