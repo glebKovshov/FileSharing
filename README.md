@@ -8,8 +8,8 @@ Python, .NET, C++/CLI и Windows Forms для запуска не нужны.
 
 ## Установка
 
-Готовые пакеты создаются в [GitHub Actions](https://github.com/glebKovshov/FileSharing/actions/workflows/build.yml).
-Откройте успешную сборку и скачайте архив нужной платформы из **Artifacts**:
+Готовые установщики доступны в [GitHub Releases](https://github.com/glebKovshov/FileSharing/releases/latest).
+Откройте раздел **Assets** и скачайте файл для своей платформы:
 
 | Платформа | Пакет | Установка |
 | --- | --- | --- |
